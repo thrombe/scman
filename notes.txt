@@ -1,5 +1,9 @@
 
 plan:
+  . add another ScrollMode 
+    . that uses the difference in time as the scroll speed (or the inv of it)
+      . the current one needs constant fast + needs speed buildup
+  . maybe shortcut to switch scroll modes?
   . seperate into files
   . try contributing to rdev for better grab features on linux
   . add .toml config file

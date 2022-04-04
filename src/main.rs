@@ -9,11 +9,11 @@ use std::{thread, time};
 struct ScrollHandle {
     prev_scroll_ts: f64,
     seperator_del_t: f64, // this much gap between scrolls to be considered seperate scrolls
-    scroll_type: ScrollType,
+    scroll_mode: ScrollMode,
 }
 
 #[derive(Debug, Clone)]
-enum ScrollType {
+enum ScrollMode {
     FlatMultiplier{m: i64},
     LinearIncline{
         combo_del_t: f64, // if scrolled faster than this, combo++
@@ -21,7 +21,7 @@ enum ScrollType {
         clamp_max: i64, 
     },
 }
-impl Default for ScrollType {
+impl Default for ScrollMode {
     fn default() -> Self {
         Self::FlatMultiplier {m: 1}
     }
@@ -32,7 +32,7 @@ impl ScrollHandle {
         Self {
             seperator_del_t: 0.01,
             // scroll_type: ScrollType::FlatMultiplier { m: 6 },
-            scroll_type: ScrollType::LinearIncline {
+            scroll_mode: ScrollMode::LinearIncline {
                 combo_del_t: 0.06, // a casual fast scroll is like 0.01 sec apart
                 clamp_max: 6,
 
@@ -56,9 +56,9 @@ impl ScrollHandle {
             _ => return EventStatus::UnHandled,
         };
 
-        multiplier *= match &mut self.scroll_type {
-            ScrollType::FlatMultiplier { m } => *m,
-            ScrollType::LinearIncline {combo_del_t, combo_num, clamp_max} => {
+        multiplier *= match &mut self.scroll_mode {
+            ScrollMode::FlatMultiplier { m } => *m,
+            ScrollMode::LinearIncline {combo_del_t, combo_num, clamp_max} => {
                 if now_del < *combo_del_t {
                     *combo_num += 1;
                     *combo_num = (*combo_num).clamp(0, *clamp_max);
