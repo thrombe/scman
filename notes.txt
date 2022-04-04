@@ -1,0 +1,6 @@
+
+plan:
+  . seperate into files
+  . try contributing to rdev for better grab features on linux
+  . add .toml config file
+  . look for a better way to block keys if not rdev
