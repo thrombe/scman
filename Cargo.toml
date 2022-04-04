@@ -1,9 +1,16 @@
 [package]
-name = "inputbot_bot"
+name = "scman"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rdev = "0.5.1"
+# rdev = { path = "crates/rdev", version = "0.5", features = ["unstable_grab"] }
+# rdev = { git = "https://github.com/thrombe/rdev", version = "0.5", features = ["unstable_grab"] }
+rdev = { version = "0.5", features = ["unstable_grab"] }
+
+[features]
+# default = ["custom_rdev"]
+
+custom_rdev = []
