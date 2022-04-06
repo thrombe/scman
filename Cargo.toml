@@ -9,6 +9,7 @@ edition = "2021"
 # rdev = { path = "crates/rdev", version = "0.5", features = ["unstable_grab"] }
 # rdev = { git = "https://github.com/thrombe/rdev", version = "0.5", features = ["unstable_grab"] }
 rdev = { version = "0.5", features = ["unstable_grab"] }
+serde = { version = "1.0.136", features = ["derive"] }
 
 [features]
 # default = ["custom_rdev"]

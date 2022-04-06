@@ -14,8 +14,8 @@ use crate::{
 };
 
 fn main() {
-    // grabb().unwrap();
-    listenn().unwrap();
+    // grabb();
+    listenn();
 }
 
 fn now_ts() -> f64 {
@@ -50,11 +50,6 @@ impl EventStatus {
     }
 }
 
-
-fn main() {
-    // grabb();
-    listenn();
-}
 
 fn listenn() {
     let mut scroll_handle = ScrollHandle::new();
