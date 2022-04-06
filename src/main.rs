@@ -10,6 +10,7 @@ struct ScrollHandle {
     prev_scroll_ts: f64,
     seperator_del_t: f64, // this much gap between scrolls to be considered seperate scrolls
     scroll_mode: ScrollMode,
+    dbg: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -24,6 +25,17 @@ enum ScrollMode {
         multiplier_bias: f64,
         clamp_max: i64,
     },
+    DelTimeInvMap{
+        max_scroll_speed: f64, // max scroll ticks per second that the user can do
+        mappers: Vec<DelTimeInvMapElement>,
+    },
+}
+
+#[derive(Debug, Clone, Copy)]
+struct DelTimeInvMapElement {
+    /// value where this gets triggered. start from 0.0 (<=1.0)
+    trigger_val: f64,
+    m: i64,
 }
 impl Default for ScrollMode {
     fn default() -> Self {
@@ -45,17 +57,31 @@ impl ScrollHandle {
             multiplier_bias: 20.0,
             clamp_max: 4,
         };
+        let _dtim = ScrollMode::DelTimeInvMap {
+            max_scroll_speed: 1.0/0.015,
+            mappers: vec![
+                DelTimeInvMapElement {trigger_val: 0.0, m: 0},
+                DelTimeInvMapElement {trigger_val: 0.07, m: 1},
+                DelTimeInvMapElement {trigger_val: 0.12, m: 2},
+                DelTimeInvMapElement {trigger_val: 0.17, m: 3},
+                DelTimeInvMapElement {trigger_val: 0.3, m: 4},
+                DelTimeInvMapElement {trigger_val: 0.6, m: 5},
+                // DelTimeInvMapElement {trigger_val: 0.8, m: 6},
+            ],
+        };
 
         // just to allow quick switching these for testing
         let scroll_mode = 
             // _fm
             // _li
-            _dti
+            // _dti
+            _dtim
         ;
 
         Self {
             seperator_del_t: 0.01,
             scroll_mode,
+            // dbg: true,
             ..Default::default()
         }
     }
@@ -83,14 +109,31 @@ impl ScrollHandle {
                 } else {
                     *combo_num = 0;
                 }
-                // dbg!(&combo_num);
+                if self.dbg {
+                    dbg!(&combo_num);
+                }
                 *combo_num
             },
             ScrollMode::DelTimeInverse { multiplier_bias, clamp_max } => {
                 let now_del_inv = 1.0/now_del;
                 let m = now_del_inv*(*multiplier_bias)*0.01;
-                // dbg!(m);
+                if self.dbg {
+                    dbg!(m);
+                }
                 m.clamp(0.0, *clamp_max as f64) as i64
+            },
+            ScrollMode::DelTimeInvMap { max_scroll_speed, mappers } => {
+                let now_del_inv = 1.0/now_del;
+                let scaled_speed = now_del_inv / *max_scroll_speed; // hopefully 0.0..1.0
+                let index = mappers.iter()
+                .position(|m| m.trigger_val > scaled_speed)
+                .unwrap_or(mappers.len())
+                -1;
+                let map = mappers[index];
+                if self.dbg {
+                    dbg!(scaled_speed, map.m);
+                }
+                map.m
             },
         };
 
