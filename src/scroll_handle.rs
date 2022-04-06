@@ -34,7 +34,7 @@ pub enum ScrollMode {
 pub struct DelTimeInvMapElement {
     /// value where this gets triggered. start from 0.0 (<=1.0)
     trigger_val: f64,
-    m: i64,
+    scroll_val: i64,
 }
 impl Default for ScrollMode {
     fn default() -> Self {
@@ -59,12 +59,12 @@ impl ScrollHandle {
         let _dtim = ScrollMode::DelTimeInvMap {
             max_scroll_speed: 1.0/0.015,
             mappers: vec![
-                DelTimeInvMapElement {trigger_val: 0.0, m: 0},
-                DelTimeInvMapElement {trigger_val: 0.07, m: 1},
-                DelTimeInvMapElement {trigger_val: 0.12, m: 2},
-                DelTimeInvMapElement {trigger_val: 0.17, m: 3},
-                DelTimeInvMapElement {trigger_val: 0.3, m: 4},
-                DelTimeInvMapElement {trigger_val: 0.6, m: 5},
+                DelTimeInvMapElement {trigger_val: 0.0, scroll_val: 0},
+                DelTimeInvMapElement {trigger_val: 0.07, scroll_val: 1},
+                DelTimeInvMapElement {trigger_val: 0.12, scroll_val: 2},
+                DelTimeInvMapElement {trigger_val: 0.17, scroll_val: 3},
+                DelTimeInvMapElement {trigger_val: 0.3, scroll_val: 4},
+                DelTimeInvMapElement {trigger_val: 0.6, scroll_val: 5},
                 // DelTimeInvMapElement {trigger_val: 0.8, m: 6},
             ],
         };
@@ -130,9 +130,9 @@ impl ScrollHandle {
                 -1;
                 let map = mappers[index];
                 if self.dbg {
-                    dbg!(scaled_speed, map.m);
+                    dbg!(scaled_speed, map.scroll_val);
                 }
-                map.m
+                map.scroll_val
             },
         };
 
