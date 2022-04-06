@@ -20,6 +20,10 @@ enum ScrollMode {
         combo_num: i64,
         clamp_max: i64, 
     },
+    DelTimeInverse{
+        multiplier_bias: f64,
+        clamp_max: i64,
+    },
 }
 impl Default for ScrollMode {
     fn default() -> Self {
@@ -29,22 +33,36 @@ impl Default for ScrollMode {
 
 impl ScrollHandle {
     fn new() -> Self {
+        let _fm = ScrollMode::FlatMultiplier { m: 6 };
+        let _li = ScrollMode::LinearIncline {
+            combo_del_t: 0.06, // a casual fast scroll is like 0.01 sec apart
+            clamp_max: 6,
+            combo_num: Default::default(),
+        };
+        let _dti = ScrollMode::DelTimeInverse {
+            // multiplier_bias: 10.0,
+            // clamp_max: 9,
+            multiplier_bias: 20.0,
+            clamp_max: 4,
+        };
+
+        // just to allow quick switching these for testing
+        let scroll_mode = 
+            // _fm
+            // _li
+            _dti
+        ;
+
         Self {
             seperator_del_t: 0.01,
-            // scroll_type: ScrollType::FlatMultiplier { m: 6 },
-            scroll_mode: ScrollMode::LinearIncline {
-                combo_del_t: 0.06, // a casual fast scroll is like 0.01 sec apart
-                clamp_max: 6,
-
-                combo_num: 0,
-            },
+            scroll_mode,
             ..Default::default()
         }
     }
     
     /// scrolling cannot be blocked for some reason (rdev 0.5.0)
     fn callback(&mut self, event: &Event) -> EventStatus {
-        let now = now_ts();
+        let now = event_ts(event);
         let now_del = now-self.prev_scroll_ts;
         if now_del < self.seperator_del_t {
             return EventStatus::UnHandled;
@@ -68,12 +86,18 @@ impl ScrollHandle {
                 // dbg!(&combo_num);
                 *combo_num
             },
+            ScrollMode::DelTimeInverse { multiplier_bias, clamp_max } => {
+                let now_del_inv = 1.0/now_del;
+                let m = now_del_inv*(*multiplier_bias)*0.01;
+                // dbg!(m);
+                m.clamp(0.0, *clamp_max as f64) as i64
+            },
         };
 
         for _ in 0..multiplier.abs() {
             send(&EventType::Wheel { delta_x: 0, delta_y: multiplier.signum() });
         }
-        self.prev_scroll_ts = now_ts();
+        self.prev_scroll_ts = event_ts(event);
         EventStatus::Block
     }
 
@@ -83,7 +107,7 @@ fn now_ts() -> f64 {
     time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap().as_secs_f64()
 }
 
-fn event_ts(e: Event) -> f64 {
+fn event_ts(e: &Event) -> f64 {
     e.time.duration_since(time::UNIX_EPOCH).unwrap().as_secs_f64()
 }
 
