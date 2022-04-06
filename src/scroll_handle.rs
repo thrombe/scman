@@ -7,8 +7,12 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct ScrollHandle {
     prev_scroll_ts: f64,
-    seperator_del_t: f64, // this much gap between scrolls to be considered seperate scrolls
+    
+    /// this much gap between scrolls to be considered seperate scrolls
+    seperator_del_t: f64,
     scroll_mode: ScrollMode,
+    
+    /// turns on debug prints
     dbg: bool,
 }
 
@@ -16,13 +20,16 @@ pub struct ScrollHandle {
 pub enum ScrollMode {
     FlatMultiplier{m: i64},
     LinearIncline{
-        combo_del_t: f64, // if scrolled faster than this, combo++
+        /// if scrolled faster than this, combo++
+        combo_del_t: f64,
         combo_num: i64,
         clamp_max: i64, 
+        clamp_min: i64,
     },
     DelTimeInverse{
         multiplier_bias: f64,
         clamp_max: i64,
+        clamp_min: i64,
     },
     DelTimeInvMap{
         max_scroll_speed: f64, // max scroll ticks per second that the user can do
@@ -44,24 +51,25 @@ impl Default for ScrollMode {
 
 impl ScrollHandle {
     pub fn new() -> Self {
-        let _fm = ScrollMode::FlatMultiplier { m: 6 };
-        let _li = ScrollMode::LinearIncline {
+        let _flat_multiplier = ScrollMode::FlatMultiplier { m: 6 };
+        let _linear_incline = ScrollMode::LinearIncline {
             combo_del_t: 0.06, // a casual fast scroll is like 0.01 sec apart
             clamp_max: 6,
+            clamp_min: 1,
             combo_num: Default::default(),
         };
-        let _dti = ScrollMode::DelTimeInverse {
+        let _del_time_inverse = ScrollMode::DelTimeInverse {
             // multiplier_bias: 10.0,
             // clamp_max: 9,
             multiplier_bias: 20.0,
             clamp_max: 4,
+            clamp_min: 1,
         };
-        let _dtim = ScrollMode::DelTimeInvMap {
+        let _del_time_inv_map = ScrollMode::DelTimeInvMap {
             max_scroll_speed: 1.0/0.015,
             mappers: vec![
-                DelTimeInvMapElement {trigger_val: 0.0, scroll_val: 0},
-                DelTimeInvMapElement {trigger_val: 0.07, scroll_val: 1},
-                DelTimeInvMapElement {trigger_val: 0.12, scroll_val: 2},
+                DelTimeInvMapElement {trigger_val: 0.0, scroll_val: 1},
+                DelTimeInvMapElement {trigger_val: 0.10, scroll_val: 2},
                 DelTimeInvMapElement {trigger_val: 0.17, scroll_val: 3},
                 DelTimeInvMapElement {trigger_val: 0.3, scroll_val: 4},
                 DelTimeInvMapElement {trigger_val: 0.6, scroll_val: 5},
@@ -71,16 +79,16 @@ impl ScrollHandle {
 
         // just to allow quick switching these for testing
         let scroll_mode = 
-            // _fm
-            // _li
-            // _dti
-            _dtim
+            // _flat_multiplier
+            // _linear_incline
+            // _del_time_inverse
+            _del_time_inv_map
         ;
 
         Self {
             seperator_del_t: 0.01,
             scroll_mode,
-            dbg: true,
+            // dbg: true,
             ..Default::default()
         }
     }
@@ -92,6 +100,7 @@ impl ScrollHandle {
         if now_del < self.seperator_del_t {
             return EventStatus::UnHandled;
         }
+        self.prev_scroll_ts = now;
 
         let mut multiplier = match event.event_type {
             EventType::Wheel { delta_x: 0, delta_y: 1 } => 1,
@@ -101,10 +110,10 @@ impl ScrollHandle {
 
         multiplier *= match &mut self.scroll_mode {
             ScrollMode::FlatMultiplier { m } => *m,
-            ScrollMode::LinearIncline {combo_del_t, combo_num, clamp_max} => {
+            ScrollMode::LinearIncline {combo_del_t, combo_num, clamp_max, clamp_min} => {
                 if now_del < *combo_del_t {
                     *combo_num += 1;
-                    *combo_num = (*combo_num).clamp(0, *clamp_max);
+                    *combo_num = (*combo_num).clamp(*clamp_min, *clamp_max);
                 } else {
                     *combo_num = 0;
                 }
@@ -113,13 +122,13 @@ impl ScrollHandle {
                 }
                 *combo_num
             },
-            ScrollMode::DelTimeInverse { multiplier_bias, clamp_max } => {
+            ScrollMode::DelTimeInverse { multiplier_bias, clamp_max, clamp_min } => {
                 let now_del_inv = 1.0/now_del;
                 let m = now_del_inv*(*multiplier_bias)*0.01;
                 if self.dbg {
                     dbg!(m);
                 }
-                m.clamp(0.0, *clamp_max as f64) as i64
+                m.clamp(*clamp_min as f64, *clamp_max as f64) as i64
             },
             ScrollMode::DelTimeInvMap { max_scroll_speed, mappers } => {
                 let now_del_inv = 1.0/now_del;
@@ -139,7 +148,6 @@ impl ScrollHandle {
         for _ in 0..multiplier.abs() {
             send(&EventType::Wheel { delta_x: 0, delta_y: multiplier.signum() });
         }
-        self.prev_scroll_ts = event_ts(event);
         EventStatus::Block
     }
 }
